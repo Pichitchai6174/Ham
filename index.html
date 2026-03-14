@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Google Form Data Test</h2>
+
+<button onclick="loadData()">Load Data</button>
+
+<table border="1" id="table"></table>
+
+<script>
+
+async function loadData() {
+
+  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtr1YbjpJwwlNBnB-a2kTz8rjJ8xYBpVj-WPxJ8gR1oy669Bw2CbG2sYTfX0efRm6mtkWpk-IXrF_9/pub?output=csv";
+
+  try {
+
+    const res = await fetch(url);
+    const text = await res.text();
+
+    const rows = text.trim().split("\n");
+
+    const table = document.getElementById("table");
+    table.innerHTML = "";
+
+    rows.forEach(row => {
+
+      const cols = row.split(",");
+      const tr = document.createElement("tr");
+
+      cols.forEach(col => {
+        const td = document.createElement("td");
+        td.textContent = col;
+        tr.appendChild(td);
+      });
+
+      table.appendChild(tr);
+
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("โหลดข้อมูลไม่ได้");
+  }
+
+}
+
+</script>
+
+</body>
+</html>
