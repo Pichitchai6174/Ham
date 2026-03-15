@@ -425,7 +425,7 @@ function App() {
 
                       <div className="flex items-center justify-between text-md">
                         <span className="text-gray-300">{item.displayLabel}</span>
-                        <span className="text-accent font-medium">{item.averageValue.toFixed(0)}</span>
+                        <span className="text-accent font-medium">{item.averageValue.toFixed(2)}</span>
                       </div>
 
                       <div className="h-2 w-full rounded-full bg-dark-700 overflow-hidden">
