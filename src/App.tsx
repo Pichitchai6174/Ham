@@ -36,6 +36,27 @@ const positionGenderBarChartConfig = {
   registeredMale: { label: "พยาบาลวิชาชีพ | ชาย", color: "var(--color-rose-400)" },
 } satisfies ChartConfig
 
+const domainPercentChartConfig = {
+  percent: {
+    label: "ร้อยละ",
+    color: "var(--color-accent)",
+  },
+} satisfies ChartConfig
+
+const columnWPercentChartConfig = {
+  percent: {
+    label: "ร้อยละ",
+    color: "var(--color-amber-400)",
+  },
+} satisfies ChartConfig
+
+const columnXPercentChartConfig = {
+  percent: {
+    label: "ร้อยละ",
+    color: "var(--color-violet-400)",
+  },
+} satisfies ChartConfig
+
 const questionDisplayLabelMap: Partial<Record<number, string>> = {
   1: "บัญชี HAM",
   2: "แยกเก็บยา",
@@ -76,6 +97,9 @@ function App() {
     operationalCount,
     registeredNurseCount,
     questionAverages,
+    domainAverages,
+    columnWPercentages,
+    columnXPercentages,
     positionGenderQuestionAverages,
   } = useDashboardStats(data)
 
@@ -128,6 +152,28 @@ function App() {
   const positionGenderBarData = positionGenderQuestionAverages.map((item) => ({
     ...item,
     question: questionDisplayLabelMap[item.questionNumber] ?? `ข้อ ${item.questionNumber}`,
+  }))
+
+  const truncateLabel = (label: string, maxLength = 40) =>
+    label.length > maxLength ? `${label.slice(0, maxLength)}...` : label
+
+  const domainPercentChartData = domainAverages.map((item) => ({
+    label: item.label,
+    percent: item.percent,
+    averageValue: item.averageValue,
+  }))
+
+  const columnWPercentChartData = columnWPercentages.map((item) => ({
+    label: item.label,
+    percent: item.percent,
+    count: item.count,
+  }))
+
+  const columnXPercentChartData = columnXPercentages.map((item) => ({
+    label: truncateLabel(item.label, 44),
+    fullLabel: item.label,
+    percent: item.percent,
+    count: item.count,
   }))
 
   return (
@@ -437,6 +483,140 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+            </div>
+
+            {/* Col 2.5 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <div className="bg-dark-800 rounded-2xl p-6 shadow-lg border border-dark-700">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <span className="w-2 h-6 bg-accent rounded"></span>
+                    วิเคราะห์รายด้าน 5 ด้านหลัก
+                  </h3>
+                </div>
+
+                <ChartContainer config={domainPercentChartConfig} className="h-80 w-full">
+                  <BarChart data={domainPercentChartData} margin={{ top: 8, right: 12, left: 0, bottom: 20 }}>
+                    <CartesianGrid vertical={false} stroke="#374151" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                      interval={0}
+                      angle={-20}
+                      textAnchor="end"
+                      height={72}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                      tickFormatter={(value: number) => `${value}%`}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          nameKey="percent"
+                          formatter={(value, _name, item) => (
+                            <div className="flex w-full items-center justify-between gap-3">
+                              <span className="text-muted-foreground">{item.payload.label}</span>
+                              <span className="font-mono font-medium text-foreground">{Number(value).toFixed(2)}%</span>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar dataKey="percent" fill="var(--color-percent)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+
+              <div className="bg-dark-800 rounded-2xl p-6 shadow-lg border border-dark-700">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <span className="w-2 h-6 bg-accent rounded"></span>
+                    กราฟคอลัมน์ W (ร้อยละ)
+                  </h3>
+                </div>
+
+                <ChartContainer config={columnWPercentChartConfig} className="h-80 w-full">
+                  <BarChart data={columnWPercentChartData} layout="vertical" margin={{ top: 8, right: 12, left: 10, bottom: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="#374151" />
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
+                      tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                      tickFormatter={(value: number) => `${value}%`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                      width={92}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          labelKey="label"
+                          nameKey="percent"
+                          formatter={(value, _name, item) => (
+                            <div className="flex w-full items-center justify-between gap-3">
+                              <span className="text-muted-foreground">{item.payload.label}</span>
+                              <span className="font-mono font-medium text-foreground">{Number(value).toFixed(2)}%</span>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar dataKey="percent" fill="var(--color-percent)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+
+              <div className="bg-dark-800 rounded-2xl p-6 shadow-lg border border-dark-700">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <span className="w-2 h-6 bg-accent rounded"></span>
+                    กราฟคอลัมน์ X (ร้อยละ)
+                  </h3>
+                </div>
+
+                <ChartContainer config={columnXPercentChartConfig} className="h-80 w-full">
+                  <BarChart data={columnXPercentChartData} layout="vertical" margin={{ top: 8, right: 12, left: 10, bottom: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="#374151" />
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
+                      tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                      tickFormatter={(value: number) => `${value}%`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                      width={140}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          labelKey="fullLabel"
+                          nameKey="percent"
+                          formatter={(value, _name, item) => (
+                            <div className="flex w-full items-center justify-between gap-3">
+                              <span className="text-muted-foreground">{item.payload.fullLabel}</span>
+                              <span className="font-mono font-medium text-foreground">{Number(value).toFixed(2)}%</span>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar dataKey="percent" fill="var(--color-percent)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
               </div>
 
             </div>

@@ -23,6 +23,21 @@ export type QuestionAverage = {
   averageValue: number;
 };
 
+export type DomainAverage = {
+  domainKey: string;
+  label: string;
+  startQuestion: number;
+  endQuestion: number;
+  averageValue: number;
+  percent: number;
+};
+
+export type CategoryPercentage = {
+  label: string;
+  count: number;
+  percent: number;
+};
+
 type PositionCategory = "senior" | "professional" | "operational" | "registered";
 type GenderCategory = "female" | "male";
 
@@ -59,6 +74,9 @@ type DashboardStats = {
   operationalCount: number;
   registeredNurseCount: number;
   questionAverages: QuestionAverage[];
+  domainAverages: DomainAverage[];
+  columnWPercentages: CategoryPercentage[];
+  columnXPercentages: CategoryPercentage[];
   positionGenderQuestionAverages: PositionGenderQuestionAverage[];
 };
 
@@ -231,6 +249,73 @@ export function useDashboardStats(data: SheetRow[]): DashboardStats {
     };
   });
 
+  const domainDefinitions = [
+    { domainKey: "domain1", label: "ข้อ 1 ถึงข้อ 4", startQuestion: 1, endQuestion: 4 },
+    { domainKey: "domain2", label: "ข้อ 5 ถึงข้อ 7", startQuestion: 5, endQuestion: 7 },
+    { domainKey: "domain3", label: "ข้อ 8", startQuestion: 8, endQuestion: 8 },
+    { domainKey: "domain4", label: "ข้อ 9 ถึงข้อ 11", startQuestion: 9, endQuestion: 11 },
+    { domainKey: "domain5", label: "ข้อ 12 ถึงข้อ 14", startQuestion: 12, endQuestion: 14 },
+  ] as const;
+
+  const domainAverages: DomainAverage[] = domainDefinitions.map((domain) => {
+    const domainValues = questionAverages.filter(
+      (item) => item.questionNumber >= domain.startQuestion && item.questionNumber <= domain.endQuestion,
+    );
+
+    const averageValue =
+      domainValues.length > 0
+        ? Number(
+            (
+              domainValues.reduce((sum, item) => sum + item.averageValue, 0) /
+              domainValues.length
+            ).toFixed(2),
+          )
+        : 0;
+
+    return {
+      domainKey: domain.domainKey,
+      label: domain.label,
+      startQuestion: domain.startQuestion,
+      endQuestion: domain.endQuestion,
+      averageValue,
+      percent: Number(Math.min(100, Math.max(0, (averageValue / 4) * 100)).toFixed(2)),
+    };
+  });
+
+  const calculateCategoryPercentage = (values: string[]) => {
+    const total = values.length;
+
+    if (total === 0) {
+      return [] as CategoryPercentage[];
+    }
+
+    const counts = values.reduce((acc, value) => {
+      acc[value] = (acc[value] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts)
+      .map(([label, count]) => ({
+        label,
+        count,
+        percent: Number(((count / total) * 100).toFixed(2)),
+      }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  const columnWValues = data.map((row) => {
+    const normalized = row["พบความคลาดเคลื่อน"]?.toString().trim();
+    return normalized && normalized.length > 0 ? normalized : "ไม่ระบุ";
+  });
+
+  const columnXValues = data.map((row) => {
+    const normalized = row["ความผิดพลาดในการจัดการยาที่พบ"]?.toString().trim();
+    return normalized && normalized.length > 0 ? normalized : "ไม่ระบุ";
+  });
+
+  const columnWPercentages = calculateCategoryPercentage(columnWValues);
+  const columnXPercentages = calculateCategoryPercentage(columnXValues);
+
   const positionGenderQuestionAverages: PositionGenderQuestionAverage[] = scoreColumnKeys.map((column, index) => {
     const initialSeriesValues = positionGenderSeries.reduce(
       (acc, series) => ({
@@ -303,7 +388,7 @@ export function useDashboardStats(data: SheetRow[]): DashboardStats {
 
   const fullComplianceCount = data.filter(
     (row) =>
-      row["การปฏิบัติตามแนวทางการจัดการยาที่ต้องเฝ้าระวังสูง"]
+      row["การปฏิบัติตามแนวทางตรวจสอบบันทึกการจัดการยาที่ต้องเฝ้าระวังสูง"]
         ?.toString()
         .trim() === "ปฏิบัติตามแนวทางครบถ้วน",
   ).length;
@@ -331,6 +416,9 @@ export function useDashboardStats(data: SheetRow[]): DashboardStats {
     operationalCount,
     registeredNurseCount,
     questionAverages,
+    domainAverages,
+    columnWPercentages,
+    columnXPercentages,
     positionGenderQuestionAverages,
   };
 }
